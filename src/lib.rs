@@ -1,4 +1,3 @@
-#![feature(inherent_associated_types)]
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
@@ -67,6 +66,18 @@ impl<
     }
 }
 
+impl<
+    const R: usize,
+    const C: usize,
+    const C2: usize
+> std::ops::Mul<Matrix<C, C2>> for Matrix<R, C> {
+    type Output = Matrix<R, C2>;
+
+    fn mul(self, rhs: Matrix<C, C2>) -> Self::Output {
+        todo!()
+    }
+}
+
 matrix_merge_op!(std::ops::Add, add);
 matrix_merge_op!(std::ops::Sub, sub);
 
@@ -86,17 +97,7 @@ macro_rules! matrix_merge_op {
     }
 }
 
-impl<
-    const R: usize,
-    const C: usize,
-    const C2: usize
-> std::ops::Mul<Matrix<C, C2>> for Matrix<R, C> {
-    type Output = Matrix<R, C2>;
 
-    fn mul(self, rhs: Matrix<C, C2>) -> Self::Output {
-        todo!()
-    }
-}
 
 
 #[cfg(test)]
