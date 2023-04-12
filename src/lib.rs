@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::ops::Index;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
@@ -18,10 +20,16 @@ impl<
     }
 
     fn zero() -> Self { Matrix::new(|_, _| 0) }
+    const fn is_square(self) -> bool { R == C }
 
     fn rows(self) -> [[i32; C]; R] { self.0 }
-    fn columns(self) -> [[i32; R]; C] { todo!() }
-    const fn is_square(self) -> bool { R == C }
+    fn columns(self) -> [[i32; R]; C] {
+        let mut acc = [[0; R]; C];
+        (0..C).for_each(|i| {
+            acc[i] = self.rows().map(|row| row[i]);
+        });
+        acc
+    }
 
     fn determinant(self) -> i32 {
         todo!()
@@ -113,6 +121,16 @@ mod tests {
     }
 
     #[test]
+    fn test_matrix_columns() {
+        let matrix = dummy_matrix();
+        assert_eq!(matrix.columns(), [
+            [1, 4, 7],
+            [2, 5, 8],
+            [3, 6, 9]
+        ])
+    }
+
+    #[test]
     fn test_matrix_zero() {
         let matrix = SquareMatrix::<3>::zero();
         assert_eq!(matrix, Matrix([
@@ -156,6 +174,11 @@ mod tests {
         let m2 = dummy_matrix();
         let m3 = m1 - m2;
         assert_eq!(m3, Matrix::zero());
+    }
+
+    #[test]
+    fn test() {
+        let matrix = dummy_matrix();
     }
 
 }
