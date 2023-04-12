@@ -9,13 +9,12 @@ impl<
 > Matrix<R, C> {
     fn new(closure: impl Fn(usize, usize) -> i32) -> Self {
         Matrix(
-            from_fn(|row| {
-                from_fn(|column| {
-                    closure(row, column)
-                })
-            })
+            from_fn(|row|
+                from_fn(|column| closure(row, column))
+            )
         )
     }
+
 
     fn zero() -> Self { Matrix::new(|_, _| 0) }
     const fn is_square(self) -> bool { R == C }
@@ -23,14 +22,6 @@ impl<
     fn rows(self) -> [[i32; C]; R] { self.0 }
     fn columns(self) -> [[i32; R]; C] {
         from_fn(|i| self.rows().map(|row| row[i]))
-    }
-
-    fn determinant(self) -> i32 {
-        todo!()
-    }
-
-    fn inverse(self) -> Self {
-        todo!()
     }
 
     fn merge(self, other: Matrix<R, C>, transform: impl Fn(i32, i32) -> i32) -> Self {
@@ -54,6 +45,14 @@ type SquareMatrix<const D: usize> = Matrix<D, D>;
 impl<const D: usize> SquareMatrix<D> {
     fn identity() -> Self {
         Matrix::new(|row, column| if row == column { 1 } else { 0 })
+    }
+
+    fn determinant(self) -> Option<i32> {
+        todo!()
+    }
+
+    fn inverse(self) -> Option<i32> {
+        todo!()
     }
 }
 
@@ -99,7 +98,6 @@ macro_rules! matrix_merge_op {
         }
     }
 }
-
 
 
 
