@@ -8,9 +8,6 @@ impl<
     const C: usize
 > Matrix<R, C> {
 
-    type Row = [i32; C];
-    type Column = [i32; R];
-
     fn new(closure: impl Fn(usize, usize) -> i32) -> Self {
         Matrix(
             (0..R).map(|row| {
@@ -23,8 +20,8 @@ impl<
 
     fn zero() -> Self { Matrix::new(|_, _| 0) }
 
-    fn rows(self) -> [Self::Row; R] { self.0 }
-    fn columns(self) -> usize { C }
+    fn rows(self) -> [[i32; C]; R] { self.0 }
+    fn columns(self) -> [[i32; R]; C] { todo!() }
     const fn is_square(self) -> bool { R == C }
 
     fn determinant(self) -> i32 {
@@ -63,33 +60,29 @@ impl<
     const R: usize,
     const C: usize
 > std::ops::Index<usize> for Matrix<R, C> {
-    type Output = Self::Row;
+    type Output = [i32; C];
 
     fn index(&self, row: usize) -> &Self::Output {
         &self.0[row]
     }
 }
 
+matrix_merge_op!(std::ops::Add, add);
+matrix_merge_op!(std::ops::Sub, sub);
 
-impl<
-    const R: usize,
-    const C: usize
-> std::ops::Add for Matrix<R, C> {
-    type Output = Self;
+#[macro_export]
+macro_rules! matrix_merge_op {
+    ($type:path, $op:tt) => {
+        impl<
+            const R: usize,
+            const C: usize
+        > $type for Matrix<R, C> {
+            type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        self.merge(rhs, |a, b| a + b)
-    }
-}
-
-impl<
-    const R: usize,
-    const C: usize
-> std::ops::Sub for Matrix<R, C> {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.merge(rhs, |a, b| a - b)
+            fn $op(self, rhs: Self) -> Self::Output {
+                self.merge(rhs, |a, b| a.$op(b))
+            }
+        }
     }
 }
 
