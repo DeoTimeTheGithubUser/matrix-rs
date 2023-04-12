@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::ops::Index;
+use std::array::from_fn;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
@@ -8,14 +7,13 @@ impl<
     const R: usize,
     const C: usize
 > Matrix<R, C> {
-
     fn new(closure: impl Fn(usize, usize) -> i32) -> Self {
         Matrix(
-            (0..R).map(|row| {
-                (0..C)
-                    .map(|column| closure(row, column))
-                    .collect::<Vec<_>>().try_into().unwrap()
-            }).collect::<Vec<_>>().try_into().unwrap()
+            from_fn(|row| {
+                from_fn(|column| {
+                    closure(row, column)
+                })
+            })
         )
     }
 
@@ -24,11 +22,7 @@ impl<
 
     fn rows(self) -> [[i32; C]; R] { self.0 }
     fn columns(self) -> [[i32; R]; C] {
-        let mut acc = [[0; R]; C];
-        (0..C).for_each(|i| {
-            acc[i] = self.rows().map(|row| row[i]);
-        });
-        acc
+        from_fn(|i| self.rows().map(|row| row[i]))
     }
 
     fn determinant(self) -> i32 {
@@ -56,6 +50,7 @@ impl<
 
 
 type SquareMatrix<const D: usize> = Matrix<D, D>;
+
 impl<const D: usize> SquareMatrix<D> {
     fn identity() -> Self {
         Matrix::new(|row, column| if row == column { 1 } else { 0 })
@@ -112,7 +107,7 @@ macro_rules! matrix_merge_op {
 mod tests {
     use super::*;
 
-    fn dummy_matrix() -> Matrix<3, 3> {
+    fn standard_matrix() -> Matrix<3, 3> {
         Matrix([
             [1, 2, 3],
             [4, 5, 6],
@@ -122,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_matrix_columns() {
-        let matrix = dummy_matrix();
+        let matrix = standard_matrix();
         assert_eq!(matrix.columns(), [
             [1, 4, 7],
             [2, 5, 8],
@@ -158,8 +153,8 @@ mod tests {
 
     #[test]
     fn test_matrix_addition() {
-        let m1 = dummy_matrix();
-        let m2 = dummy_matrix();
+        let m1 = standard_matrix();
+        let m2 = standard_matrix();
         let m3 = m1 + m2;
         assert_eq!(m3, Matrix([
             [2, 4, 6],
@@ -170,15 +165,10 @@ mod tests {
 
     #[test]
     fn test_matrix_subtraction() {
-        let m1 = dummy_matrix();
-        let m2 = dummy_matrix();
+        let m1 = standard_matrix();
+        let m2 = standard_matrix();
         let m3 = m1 - m2;
         assert_eq!(m3, Matrix::zero());
-    }
-
-    #[test]
-    fn test() {
-        let matrix = dummy_matrix();
     }
 
 }
