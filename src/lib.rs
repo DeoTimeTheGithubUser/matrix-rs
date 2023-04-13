@@ -75,8 +75,16 @@ impl<
 > std::ops::Mul<Matrix<C, C2>> for Matrix<R, C> {
     type Output = Matrix<R, C2>;
 
-    fn mul(self, rhs: Matrix<C, C2>) -> Self::Output {
-        todo!()
+    fn mul(self, other: Matrix<C, C2>) -> Self::Output {
+        Matrix::new(|ri, ci| {
+            let row = self.rows()[ri];
+            let column = other.columns()[ci];
+            let mut sum = 0;
+            for i in 0..C {
+                sum += row[i] * column[i];
+            }
+            sum
+        })
     }
 }
 
@@ -169,22 +177,22 @@ mod tests {
         assert_eq!(m3, Matrix::zero());
     }
 
-    3[test]
+    #[test]
     fn test_matrix_multiplication() {
         let m1 = Matrix([
-            [5, 1],
-            [2, 3],
-            [4, 7]
+            [1, 2],
+            [3, 4],
+            [5, 6]
         ]);
         let m2 = Matrix([
-            [4, 11, 3],
-            [2, 7, 9]
+            [1, 2, 3],
+            [4, 5, 6]
         ]);
         let m3 = m1 * m2;
         assert_eq!(m3, Matrix([
-            [22, 62, 24],
-            [14, 43, 33],
-            [30, 93, 75]
+            [9, 12, 15],
+            [19, 26, 33],
+            [29, 40, 51]
         ]))
     }
 
