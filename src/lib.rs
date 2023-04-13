@@ -169,5 +169,24 @@ mod tests {
         assert_eq!(m3, Matrix::zero());
     }
 
+    3[test]
+    fn test_matrix_multiplication() {
+        let m1 = Matrix([
+            [5, 1],
+            [2, 3],
+            [4, 7]
+        ]);
+        let m2 = Matrix([
+            [4, 11, 3],
+            [2, 7, 9]
+        ]);
+        let m3 = m1 * m2;
+        assert_eq!(m3, Matrix([
+            [22, 62, 24],
+            [14, 43, 33],
+            [30, 93, 75]
+        ]))
+    }
+
 }
 
