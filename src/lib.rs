@@ -47,8 +47,13 @@ impl<const D: usize> SquareMatrix<D> {
         Matrix::new(|row, column| if row == column { 1 } else { 0 })
     }
 
-    fn determinant(self) -> Option<i32> {
-        todo!()
+    fn determinant(self) -> i32 {
+        match D {
+            0 => 1,
+            1 => self[0][0],
+            2 => (self[0][0] * self[1][1]) - (self[0][1] * self[1][0]),
+            _ => todo!()
+        }
     }
 
     fn inverse(self) -> Option<Self> {
