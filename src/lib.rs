@@ -51,7 +51,7 @@ impl<const D: usize> SquareMatrix<D> {
         todo!()
     }
 
-    fn inverse(self) -> Option<i32> {
+    fn inverse(self) -> Option<Self> {
         todo!()
     }
 }
