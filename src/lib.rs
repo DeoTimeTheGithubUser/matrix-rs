@@ -63,7 +63,6 @@ fn determinant_vec_impl(vec: VecMatrix) -> i32 {
             let mut det = 0;
             let main_row = &vec[0];
             for i in 0..vec.len() {
-
                 let to = side_len - 1;
                 let sub: VecMatrix = (0..to).map(|ri|
                     (0..to).map(|ci| {
@@ -80,6 +79,7 @@ fn determinant_vec_impl(vec: VecMatrix) -> i32 {
         }
     }
 }
+
 impl<const D: usize> SquareMatrix<D> {
     fn identity() -> Self {
         Matrix::new(|row, column| if row == column { 1 } else { 0 })
@@ -172,27 +172,33 @@ mod tests {
     #[test]
     fn test_matrix_zero() {
         let matrix = SquareMatrix::<3>::zero();
-        assert_eq!(matrix, Matrix([
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0]
-        ]))
+        assert_eq!(
+            matrix,
+            Matrix([
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0]
+            ])
+        );
     }
 
     #[test]
     fn test_matrix_identity() {
         let matrix = SquareMatrix::<3>::identity();
-        assert_eq!(matrix, Matrix([
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]
-        ]))
+        assert_eq!(
+            matrix,
+            Matrix([
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1]
+            ])
+        );
     }
 
     #[test]
     fn test_matrix_is_square() {
         let matrix = SquareMatrix::<5>::zero();
-        assert!(matrix.is_square())
+        assert!(matrix.is_square(), "Square matrix not square.")
     }
 
     #[test]
@@ -200,11 +206,14 @@ mod tests {
         let m1 = standard_matrix();
         let m2 = standard_matrix();
         let m3 = m1 + m2;
-        assert_eq!(m3, Matrix([
-            [2, 4, 6],
-            [8, 10, 12],
-            [14, 16, 18]
-        ]));
+        assert_eq!(
+            m3,
+            Matrix([
+                [2, 4, 6],
+                [8, 10, 12],
+                [14, 16, 18]
+            ])
+        );
     }
 
     #[test]
@@ -217,43 +226,53 @@ mod tests {
 
     #[test]
     fn test_matrix_multiplication() {
-        let m1 = Matrix([
+        let m1_a = Matrix::from([[5]]);
+        let m1_b = Matrix::from([[3]]);
+        assert_eq!(
+            m1_a * m1_b,
+            Matrix::from([[15]]),
+            "(1x1) * (1x1) matrix multiplication failed."
+        );
+
+        let m2_a = Matrix::from([
+            [1, 2, 3],
+            [4, 5, 6]
+        ]);
+        let m2_b = Matrix::from([
             [1, 2],
             [3, 4],
             [5, 6]
         ]);
-        let m2 = Matrix([
-            [1, 2, 3],
-            [4, 5, 6]
-        ]);
-        let m3 = m1 * m2;
-        assert_eq!(m3, Matrix([
-            [9, 12, 15],
-            [19, 26, 33],
-            [29, 40, 51]
-        ]))
+        assert_eq!(
+            m2_a * m2_b,
+            Matrix::from([
+                [22, 28],
+                [49, 64]
+            ]),
+            "(2x3) * (3x2) matrix multiplication failed."
+        );
     }
 
     #[test]
     fn test_matrix_determinant() {
         let m0 = SquareMatrix::from([]);
-        assert_eq!(m0.determinant(), 1, "0x0 matrix determinant failed.");
+        assert_eq!(m0.determinant(), 1, "(0x0) matrix determinant failed.");
 
         let m1 = SquareMatrix::from([[123]]);
-        assert_eq!(m1.determinant(), 123, "1x1 matrix determinant failed.");
+        assert_eq!(m1.determinant(), 123, "(1x1) matrix determinant failed.");
 
         let m2 = SquareMatrix::from([
             [11, 7],
             [2, 5]
         ]);
-        assert_eq!(m2.determinant(), 41, "2x2 matrix determinant failed.");
+        assert_eq!(m2.determinant(), 41, "(2x2) matrix determinant failed.");
 
         let m3 = SquareMatrix::from([
             [7, 4, 5],
             [3, 10, 1],
             [9, 0, 7]
         ]);
-        assert_eq!(m3.determinant(), -8, "3x3 matrix determinant failed.");
+        assert_eq!(m3.determinant(), -8, "(3x3) matrix determinant failed.");
 
         let m4 = SquareMatrix::from([
             [7, 8, 4, 5],
@@ -261,7 +280,7 @@ mod tests {
             [7, 12, 3, 2],
             [0, 5, 14, 3]
         ]);
-        assert_eq!(m4.determinant(), 4471, "4x4 matrix determinant failed.");
+        assert_eq!(m4.determinant(), 4471, "(4x4) matrix determinant failed.");
     }
 }
 
