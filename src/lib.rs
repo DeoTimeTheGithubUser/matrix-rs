@@ -1,4 +1,7 @@
+#![feature(generic_const_exprs)]
+
 use std::array::from_fn;
+use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
@@ -40,20 +43,67 @@ impl<
 }
 
 
-type SquareMatrix<const D: usize> = Matrix<D, D>;
+pub type SquareMatrix<const D: usize> = Matrix<D, D>;
 
-impl<const D: usize> SquareMatrix<D> {
+pub trait Determinant {
+    fn determinant(self) -> i32;
+}
+
+impl Determinant for SquareMatrix<0> {
+    fn determinant(self) -> i32 { 1 }
+}
+impl Determinant for SquareMatrix<1> {
+    fn determinant(self) -> i32 { self[0][0] }
+}
+impl Determinant for SquareMatrix<2> {
+    fn determinant(self) -> i32 { (self[0][0] * self[1][1]) - (self[0][1] * self[1][0]) }
+}
+
+
+pub enum Predicate<const Value: bool> {}
+trait True {}
+trait False {}
+impl True for Predicate<true> {}
+impl False for Predicate<false> {}
+
+trait Not012 {
+
+}
+
+const fn check_012<const N: usize>() -> bool {
+    N == 0 || N == 1 || N == 2
+}
+impl<const S: usize> Not012 for SquareMatrix<S>
+    where Predicate<{ check_012::<S>() }>: False {
+
+}
+
+impl <const D: usize> Determinant for SquareMatrix<D>
+    where
+        Self: Not012,
+        SquareMatrix<{ D - 1 }>: Sized + Not012 {
+    fn determinant(self) -> i32 {
+        let mut det = 0;
+        let main_row = self.rows()[0];
+        for i in 0..D {
+
+            let sub: SquareMatrix<{ D - 1 }> = SquareMatrix::<{ D - 1 }>::new(|ri, ci| {
+                let row = self.rows()[ri + 1];
+                row[if ci >= i { ci + 1 } else { ci }]
+            });
+
+
+            todo!()
+            // det += (main_row[i] * sub.determinant())
+        }
+        det
+    }
+}
+
+impl<const D: usize> SquareMatrix<D>
+    where SquareMatrix<{ D - 1 }>: Sized {
     fn identity() -> Self {
         Matrix::new(|row, column| if row == column { 1 } else { 0 })
-    }
-
-    fn determinant(self) -> i32 {
-        match D {
-            0 => 1,
-            1 => self[0][0],
-            2 => (self[0][0] * self[1][1]) - (self[0][1] * self[1][0]),
-            _ => todo!()
-        }
     }
 
     fn inverse(self) -> Option<Self> {
@@ -111,8 +161,6 @@ macro_rules! matrix_merge_op {
         }
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -200,6 +248,5 @@ mod tests {
             [29, 40, 51]
         ]))
     }
-
 }
 
