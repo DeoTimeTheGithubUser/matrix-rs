@@ -48,8 +48,7 @@ impl<const D: usize> SquareMatrix<D> {
 
     pub fn inverse(&self) -> Option<Self> {
         let det = self.determinant();
-        if det == 0.0 { None }
-        else {
+        if det == 0.0 { None } else {
             todo!()
         }
     }
@@ -183,11 +182,14 @@ mod tests {
     #[test]
     fn test_matrix_columns() {
         let matrix = standard_matrix();
-        assert_eq!(matrix.columns(), [
-            [1.0, 4.0, 7.0],
-            [2.0, 5.0, 8.0],
-            [3.0, 6.0, 9.0]
-        ])
+        assert_eq!(
+            matrix.columns(),
+            [
+                [1.0, 4.0, 7.0],
+                [2.0, 5.0, 8.0],
+                [3.0, 6.0, 9.0]
+            ]
+        )
     }
 
     #[test]
@@ -280,20 +282,32 @@ mod tests {
         assert_eq!(m0.determinant(), 1.0, "(0x0) matrix determinant failed.");
 
         let m1 = SquareMatrix::from([[123.0]]);
-        assert_eq!(m1.determinant(), 123.0, "(1x1) matrix determinant failed.");
+        assert_eq!(
+            m1.determinant(),
+            123.0,
+            "(1x1) matrix determinant failed."
+        );
 
         let m2 = SquareMatrix::from([
             [11.0, 7.0],
             [2.0, 5.0]
         ]);
-        assert_eq!(m2.determinant(), 41.0, "(2x2) matrix determinant failed.");
+        assert_eq!(
+            m2.determinant(),
+            41.0,
+            "(2x2) matrix determinant failed."
+        );
 
         let m3 = SquareMatrix::from([
             [7.0, 4.0, 5.0],
             [3.0, 10.0, 1.0],
             [9.0, 0.0, 7.0]
         ]);
-        assert_eq!(m3.determinant(), -8.0, "(3x3) matrix determinant failed.");
+        assert_eq!(
+            m3.determinant(),
+            -8.0,
+            "(3x3) matrix determinant failed."
+        );
 
         let m4 = SquareMatrix::from([
             [7.0, 8.0, 4.0, 5.0],
@@ -301,12 +315,16 @@ mod tests {
             [7.0, 12.0, 3.0, 2.0],
             [0.0, 5.0, 14.0, 3.0]
         ]);
-        assert_eq!(m4.determinant(), 4471.0, "(4x4) matrix determinant failed.");
+        assert_eq!(
+            m4.determinant(),
+            4471.0,
+            "(4x4) matrix determinant failed."
+        );
     }
 
     #[test]
     fn test_matrix_inverse() {
-        let m = standard_matrix();
+        let m = SquareMatrix::<3>::zero();
         assert!(!m.has_inverse());
     }
 }
