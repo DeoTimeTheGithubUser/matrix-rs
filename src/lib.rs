@@ -1,7 +1,7 @@
 #![feature(generic_const_exprs)]
+#![feature(const_trait_impl)]
 
 use std::array::from_fn;
-use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
@@ -18,7 +18,6 @@ impl<
         )
     }
 
-
     fn zero() -> Self { Matrix::new(|_, _| 0) }
     const fn is_square(self) -> bool { R == C }
 
@@ -32,6 +31,14 @@ impl<
     }
 }
 
+impl<
+    const R: usize,
+    const C: usize
+> From<[[i32; C]; R]> for Matrix<R, C> {
+    fn from(value: [[i32; C]; R]) -> Self {
+        Matrix(value)
+    }
+}
 
 impl<
     const R: usize,
@@ -42,72 +49,50 @@ impl<
     }
 }
 
-
 pub type SquareMatrix<const D: usize> = Matrix<D, D>;
 
-pub trait Determinant {
-    fn determinant(self) -> i32;
-}
+pub type VecMatrix = Vec<Vec<i32>>;
 
-impl Determinant for SquareMatrix<0> {
-    fn determinant(self) -> i32 { 1 }
-}
-impl Determinant for SquareMatrix<1> {
-    fn determinant(self) -> i32 { self[0][0] }
-}
-impl Determinant for SquareMatrix<2> {
-    fn determinant(self) -> i32 { (self[0][0] * self[1][1]) - (self[0][1] * self[1][0]) }
-}
+fn determinant_vec_impl(vec: VecMatrix) -> i32 {
+    let side_len = vec.len();
+    match side_len {
+        0 => 1,
+        1 => vec[0][0],
+        2 => (vec[0][0] * vec[1][1]) - (vec[0][1] * vec[1][0]),
+        _ => {
+            let mut det = 0;
+            let main_row = &vec[0];
+            for i in 0..vec.len() {
 
-
-pub enum Predicate<const Value: bool> {}
-trait True {}
-trait False {}
-impl True for Predicate<true> {}
-impl False for Predicate<false> {}
-
-trait Not012 {
-
-}
-
-const fn check_012<const N: usize>() -> bool {
-    N == 0 || N == 1 || N == 2
-}
-impl<const S: usize> Not012 for SquareMatrix<S>
-    where Predicate<{ check_012::<S>() }>: False {
-
-}
-
-impl <const D: usize> Determinant for SquareMatrix<D>
-    where
-        Self: Not012,
-        SquareMatrix<{ D - 1 }>: Sized + Not012 {
-    fn determinant(self) -> i32 {
-        let mut det = 0;
-        let main_row = self.rows()[0];
-        for i in 0..D {
-
-            let sub: SquareMatrix<{ D - 1 }> = SquareMatrix::<{ D - 1 }>::new(|ri, ci| {
-                let row = self.rows()[ri + 1];
-                row[if ci >= i { ci + 1 } else { ci }]
-            });
+                let to = side_len - 1;
+                let sub: VecMatrix = (0..to).map(|ri|
+                    (0..to).map(|ci| {
+                        let row = &vec[ri + 1];
+                        row[if ci >= i { ci + 1 } else { ci }]
+                    }).collect()
+                ).collect();
 
 
-            todo!()
-            // det += (main_row[i] * sub.determinant())
+                det += (main_row[i] * determinant_vec_impl(sub))
+                    * (if i % 2 == 0 { 1 } else { -1 })
+            }
+            det
         }
-        det
     }
 }
-
-impl<const D: usize> SquareMatrix<D>
-    where SquareMatrix<{ D - 1 }>: Sized {
+impl<const D: usize> SquareMatrix<D> {
     fn identity() -> Self {
         Matrix::new(|row, column| if row == column { 1 } else { 0 })
     }
 
     fn inverse(self) -> Option<Self> {
         todo!()
+    }
+
+    fn determinant(self) -> i32 {
+        determinant_vec_impl(
+            self.rows().map(|r| r.to_vec()).to_vec()
+        )
     }
 }
 
@@ -247,6 +232,36 @@ mod tests {
             [19, 26, 33],
             [29, 40, 51]
         ]))
+    }
+
+    #[test]
+    fn test_matrix_determinant() {
+        let m0 = SquareMatrix::from([]);
+        assert_eq!(m0.determinant(), 1, "0x0 matrix determinant failed.");
+
+        let m1 = SquareMatrix::from([[123]]);
+        assert_eq!(m1.determinant(), 123, "1x1 matrix determinant failed.");
+
+        let m2 = SquareMatrix::from([
+            [11, 7],
+            [2, 5]
+        ]);
+        assert_eq!(m2.determinant(), 41, "2x2 matrix determinant failed.");
+
+        let m3 = SquareMatrix::from([
+            [7, 4, 5],
+            [3, 10, 1],
+            [9, 0, 7]
+        ]);
+        assert_eq!(m3.determinant(), -8, "3x3 matrix determinant failed.");
+
+        let m4 = SquareMatrix::from([
+            [7, 8, 4, 5],
+            [6, 22, 1, 4],
+            [7, 12, 3, 2],
+            [0, 5, 14, 3]
+        ]);
+        assert_eq!(m4.determinant(), 4471, "4x4 matrix determinant failed.");
     }
 }
 
