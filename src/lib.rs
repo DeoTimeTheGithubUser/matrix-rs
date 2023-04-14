@@ -1,57 +1,47 @@
-#![feature(generic_const_exprs)]
-#![feature(const_trait_impl)]
-
-use std::array::from_fn;
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
+
+pub type SquareMatrix<const D: usize> = Matrix<D, D>;
+pub type VecMatrix = Vec<Vec<i32>>;
 
 impl<
     const R: usize,
     const C: usize
 > Matrix<R, C> {
-    fn new(closure: impl Fn(usize, usize) -> i32) -> Self {
-        Matrix(
-            from_fn(|row|
-                from_fn(|column| closure(row, column))
+    pub fn new(closure: impl Fn(usize, usize) -> i32) -> Self {
+        Self(
+            std::array::from_fn(|row|
+                std::array::from_fn(|column| closure(row, column))
             )
         )
     }
 
-    fn zero() -> Self { Matrix::new(|_, _| 0) }
-    const fn is_square(self) -> bool { R == C }
+    pub fn zero() -> Self { Self::new(|_, _| 0) }
+    pub const fn is_square(self) -> bool { R == C }
 
-    fn rows(self) -> [[i32; C]; R] { self.0 }
-    fn columns(self) -> [[i32; R]; C] {
-        from_fn(|i| self.rows().map(|row| row[i]))
+    pub fn rows(self) -> [[i32; C]; R] { self.0 }
+    pub fn columns(self) -> [[i32; R]; C] {
+        std::array::from_fn(|i| self.rows().map(|row| row[i]))
     }
 
-    fn merge(self, other: Matrix<R, C>, transform: impl Fn(i32, i32) -> i32) -> Self {
-        Matrix::new(|row, column| transform(self[row][column], other[row][column]))
-    }
-}
-
-impl<
-    const R: usize,
-    const C: usize
-> From<[[i32; C]; R]> for Matrix<R, C> {
-    fn from(value: [[i32; C]; R]) -> Self {
-        Matrix(value)
+    pub fn merge(self, other: Matrix<R, C>, transform: impl Fn(i32, i32) -> i32) -> Self {
+        Self::new(|row, column| transform(self[row][column], other[row][column]))
     }
 }
 
-impl<
-    const R: usize,
-    const C: usize
-> Default for Matrix<R, C> {
-    fn default() -> Self {
-        Matrix::zero()
+impl<const D: usize> SquareMatrix<D> {
+    pub fn identity() -> Self {
+        Self::new(|row, column| if row == column { 1 } else { 0 })
+    }
+
+    pub fn inverse(self) -> Option<Self> {
+        todo!()
+    }
+
+    pub fn determinant(self) -> i32 {
+        determinant_vec_impl(self.into())
     }
 }
-
-pub type SquareMatrix<const D: usize> = Matrix<D, D>;
-
-pub type VecMatrix = Vec<Vec<i32>>;
 
 fn determinant_vec_impl(vec: VecMatrix) -> i32 {
     let side_len = vec.len();
@@ -70,8 +60,6 @@ fn determinant_vec_impl(vec: VecMatrix) -> i32 {
                         row[if ci >= i { ci + 1 } else { ci }]
                     }).collect()
                 ).collect();
-
-
                 det += (main_row[i] * determinant_vec_impl(sub))
                     * (if i % 2 == 0 { 1 } else { -1 })
             }
@@ -80,33 +68,24 @@ fn determinant_vec_impl(vec: VecMatrix) -> i32 {
     }
 }
 
-impl<const D: usize> SquareMatrix<D> {
-    fn identity() -> Self {
-        Matrix::new(|row, column| if row == column { 1 } else { 0 })
-    }
+#[macro_export]
+macro_rules! matrix_merge_op {
+    ($type:path, $op:tt) => {
+        impl<
+            const R: usize,
+            const C: usize
+        > $type for Matrix<R, C> {
+            type Output = Self;
 
-    fn inverse(self) -> Option<Self> {
-        todo!()
-    }
-
-    fn determinant(self) -> i32 {
-        determinant_vec_impl(
-            self.rows().map(|r| r.to_vec()).to_vec()
-        )
-    }
-}
-
-
-impl<
-    const R: usize,
-    const C: usize
-> std::ops::Index<usize> for Matrix<R, C> {
-    type Output = [i32; C];
-
-    fn index(&self, row: usize) -> &Self::Output {
-        &self.0[row]
+            fn $op(self, rhs: Self) -> Self::Output {
+                self.merge(rhs, |a, b| a.$op(b))
+            }
+        }
     }
 }
+
+matrix_merge_op!(std::ops::Add, add);
+matrix_merge_op!(std::ops::Sub, sub);
 
 impl<
     const R: usize,
@@ -128,24 +107,45 @@ impl<
     }
 }
 
-matrix_merge_op!(std::ops::Add, add);
-matrix_merge_op!(std::ops::Sub, sub);
-
-#[macro_export]
-macro_rules! matrix_merge_op {
-    ($type:path, $op:tt) => {
-        impl<
-            const R: usize,
-            const C: usize
-        > $type for Matrix<R, C> {
-            type Output = Self;
-
-            fn $op(self, rhs: Self) -> Self::Output {
-                self.merge(rhs, |a, b| a.$op(b))
-            }
-        }
+impl<
+    const R: usize,
+    const C: usize
+> From<[[i32; C]; R]> for Matrix<R, C> {
+    fn from(value: [[i32; C]; R]) -> Self {
+        Self(value)
     }
 }
+
+impl<
+    const R: usize,
+    const C: usize
+> Into<VecMatrix> for Matrix<R, C> {
+    fn into(self) -> VecMatrix {
+        self.rows().map(|r| r.to_vec()).to_vec()
+    }
+}
+
+impl<
+    const R: usize,
+    const C: usize
+> Default for Matrix<R, C> {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
+impl<
+    const R: usize,
+    const C: usize
+> std::ops::Index<usize> for Matrix<R, C> {
+    type Output = [i32; C];
+
+    fn index(&self, row: usize) -> &Self::Output {
+        &self.0[row]
+    }
+}
+
+
 
 #[cfg(test)]
 mod tests {
