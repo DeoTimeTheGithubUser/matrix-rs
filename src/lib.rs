@@ -145,7 +145,7 @@ macro_rules! matrix_from_2d_num_array {
     )*)
 }
 
-matrix_from_2d_num_array!(f32 i32);
+matrix_from_2d_num_array!(f32 i32 usize);
 
 impl<
     const R: usize,
