@@ -24,8 +24,14 @@ impl<
         std::array::from_fn(|i| self.rows().map(|row| row[i]))
     }
 
-    pub fn merge(self, other: Matrix<R, C>, transform: impl Fn(i32, i32) -> i32) -> Self {
-        Self::new(|row, column| transform(self[row][column], other[row][column]))
+    pub fn transform<F>(self, f: F) -> Self
+        where F: Fn(i32) -> i32 {
+        Self::new(|r, c| f(self[r][c]))
+    }
+
+    pub fn merge<F>(self, other: Matrix<R, C>, f: F) -> Self
+        where F: Fn(i32, i32) -> i32 {
+        Self::new(|r, c| f(self[r][c], other[r][c]))
     }
 }
 
@@ -109,6 +115,16 @@ impl<
 
 impl<
     const R: usize,
+    const C: usize,
+> std::ops::Mul<i32> for Matrix<R, C> {
+    type Output = Self;
+    fn mul(self, rhs: i32) -> Self::Output {
+        self.transform(|v| v * rhs)
+    }
+}
+
+impl<
+    const R: usize,
     const C: usize
 > From<[[i32; C]; R]> for Matrix<R, C> {
     fn from(value: [[i32; C]; R]) -> Self {
@@ -144,7 +160,6 @@ impl<
         &self.0[row]
     }
 }
-
 
 
 #[cfg(test)]
