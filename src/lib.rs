@@ -176,6 +176,23 @@ impl<
     }
 }
 
+impl<
+    const R: usize,
+    const C: usize
+> std::fmt::Display for Matrix<R, C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let lines = self.rows().map(|row| format!("{:?}", row));
+        let longest = lines.iter()
+            .map(|s| s.len())
+            .max().unwrap_or(0);
+        writeln!(f, "{:^len$}", format!("({}x{} matrix)", R, C), len = longest)?;
+        for line in lines {
+            writeln!(f, "{line}")?;
+        }
+        Ok(())
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -187,6 +204,11 @@ mod tests {
             [4, 5, 6],
             [7, 8, 9]
         ])
+    }
+
+    #[test]
+    fn test_matrix_display() {
+        println!("{}", standard_matrix())
     }
 
     #[test]
