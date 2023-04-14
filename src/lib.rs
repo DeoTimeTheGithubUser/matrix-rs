@@ -1,14 +1,14 @@
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Matrix<const R: usize, const C: usize>([[i32; C]; R]);
+#[derive(Debug, PartialEq)]
+pub struct Matrix<const R: usize, const C: usize>([[f32; C]; R]);
 
 pub type SquareMatrix<const D: usize> = Matrix<D, D>;
-pub type VecMatrix = Vec<Vec<i32>>;
+pub type VecMatrix = Vec<Vec<f32>>;
 
 impl<
     const R: usize,
     const C: usize
 > Matrix<R, C> {
-    pub fn new(closure: impl Fn(usize, usize) -> i32) -> Self {
+    pub fn new(closure: impl Fn(usize, usize) -> f32) -> Self {
         Self(
             std::array::from_fn(|row|
                 std::array::from_fn(|column| closure(row, column))
@@ -16,47 +16,53 @@ impl<
         )
     }
 
-    pub fn zero() -> Self { Self::new(|_, _| 0) }
-    pub const fn is_square(self) -> bool { R == C }
+    pub fn zero() -> Self { Self::new(|_, _| 0.0) }
+    pub const fn is_square(&self) -> bool { R == C }
 
-    pub fn rows(self) -> [[i32; C]; R] { self.0 }
-    pub fn columns(self) -> [[i32; R]; C] {
+    pub fn rows(&self) -> [[f32; C]; R] { self.0 }
+    pub fn columns(&self) -> [[f32; R]; C] {
         std::array::from_fn(|i| self.rows().map(|row| row[i]))
     }
 
-    pub fn transform<F>(self, f: F) -> Self
-        where F: Fn(i32) -> i32 {
+    pub fn transform<F>(&self, f: F) -> Self
+        where F: Fn(f32) -> f32 {
         Self::new(|r, c| f(self[r][c]))
     }
 
-    pub fn merge<F>(self, other: Matrix<R, C>, f: F) -> Self
-        where F: Fn(i32, i32) -> i32 {
+    pub fn merge<F>(&self, other: Matrix<R, C>, f: F) -> Self
+        where F: Fn(f32, f32) -> f32 {
         Self::new(|r, c| f(self[r][c], other[r][c]))
     }
 }
 
 impl<const D: usize> SquareMatrix<D> {
     pub fn identity() -> Self {
-        Self::new(|row, column| if row == column { 1 } else { 0 })
+        Self::new(|row, column| if row == column { 1.0 } else { 0.0 })
     }
 
-    pub fn inverse(self) -> Option<Self> {
-        todo!()
+    pub fn determinant(&self) -> f32 {
+        determinant_vec_impl(&self.into())
     }
 
-    pub fn determinant(self) -> i32 {
-        determinant_vec_impl(self.into())
+    pub fn has_inverse(&self) -> bool { self.determinant() != 0.0 }
+
+    pub fn inverse(&self) -> Option<Self> {
+        let det = self.determinant();
+        if det == 0.0 { None }
+        else {
+            todo!()
+        }
     }
 }
 
-fn determinant_vec_impl(vec: VecMatrix) -> i32 {
+fn determinant_vec_impl(vec: &VecMatrix) -> f32 {
     let side_len = vec.len();
     match side_len {
-        0 => 1,
+        0 => 1.0,
         1 => vec[0][0],
         2 => (vec[0][0] * vec[1][1]) - (vec[0][1] * vec[1][0]),
         _ => {
-            let mut det = 0;
+            let mut det = 0.0;
             let main_row = &vec[0];
             for i in 0..vec.len() {
                 let to = side_len - 1;
@@ -66,8 +72,8 @@ fn determinant_vec_impl(vec: VecMatrix) -> i32 {
                         row[if ci >= i { ci + 1 } else { ci }]
                     }).collect()
                 ).collect();
-                det += (main_row[i] * determinant_vec_impl(sub))
-                    * (if i % 2 == 0 { 1 } else { -1 })
+                det += (main_row[i] * determinant_vec_impl(&sub))
+                    * (if i % 2 == 0 { 1.0 } else { -1.0 })
             }
             det
         }
@@ -104,7 +110,7 @@ impl<
         Matrix::new(|ri, ci| {
             let row = self.rows()[ri];
             let column = other.columns()[ci];
-            let mut sum = 0;
+            let mut sum = 0.0;
             for i in 0..C {
                 sum += row[i] * column[i];
             }
@@ -116,9 +122,9 @@ impl<
 impl<
     const R: usize,
     const C: usize,
-> std::ops::Mul<i32> for Matrix<R, C> {
+> std::ops::Mul<f32> for Matrix<R, C> {
     type Output = Self;
-    fn mul(self, rhs: i32) -> Self::Output {
+    fn mul(self, rhs: f32) -> Self::Output {
         self.transform(|v| v * rhs)
     }
 }
@@ -126,8 +132,8 @@ impl<
 impl<
     const R: usize,
     const C: usize
-> From<[[i32; C]; R]> for Matrix<R, C> {
-    fn from(value: [[i32; C]; R]) -> Self {
+> From<[[f32; C]; R]> for Matrix<R, C> {
+    fn from(value: [[f32; C]; R]) -> Self {
         Self(value)
     }
 }
@@ -135,7 +141,7 @@ impl<
 impl<
     const R: usize,
     const C: usize
-> Into<VecMatrix> for Matrix<R, C> {
+> Into<VecMatrix> for &Matrix<R, C> {
     fn into(self) -> VecMatrix {
         self.rows().map(|r| r.to_vec()).to_vec()
     }
@@ -154,7 +160,7 @@ impl<
     const R: usize,
     const C: usize
 > std::ops::Index<usize> for Matrix<R, C> {
-    type Output = [i32; C];
+    type Output = [f32; C];
 
     fn index(&self, row: usize) -> &Self::Output {
         &self.0[row]
@@ -168,9 +174,9 @@ mod tests {
 
     fn standard_matrix() -> Matrix<3, 3> {
         Matrix([
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0]
         ])
     }
 
@@ -178,9 +184,9 @@ mod tests {
     fn test_matrix_columns() {
         let matrix = standard_matrix();
         assert_eq!(matrix.columns(), [
-            [1, 4, 7],
-            [2, 5, 8],
-            [3, 6, 9]
+            [1.0, 4.0, 7.0],
+            [2.0, 5.0, 8.0],
+            [3.0, 6.0, 9.0]
         ])
     }
 
@@ -190,9 +196,9 @@ mod tests {
         assert_eq!(
             matrix,
             Matrix([
-                [0, 0, 0],
-                [0, 0, 0],
-                [0, 0, 0]
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0]
             ])
         );
     }
@@ -203,9 +209,9 @@ mod tests {
         assert_eq!(
             matrix,
             Matrix([
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 1]
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0]
             ])
         );
     }
@@ -223,10 +229,10 @@ mod tests {
         let m3 = m1 + m2;
         assert_eq!(
             m3,
-            Matrix([
-                [2, 4, 6],
-                [8, 10, 12],
-                [14, 16, 18]
+            Matrix::from([
+                [2.0, 4.0, 6.0],
+                [8.0, 10.0, 12.0],
+                [14.0, 16.0, 18.0]
             ])
         );
     }
@@ -241,28 +247,28 @@ mod tests {
 
     #[test]
     fn test_matrix_multiplication() {
-        let m1_a = Matrix::from([[5]]);
-        let m1_b = Matrix::from([[3]]);
+        let m1_a = Matrix::from([[5.0]]);
+        let m1_b = Matrix::from([[3.0]]);
         assert_eq!(
             m1_a * m1_b,
-            Matrix::from([[15]]),
+            Matrix::from([[15.0]]),
             "(1x1) * (1x1) matrix multiplication failed."
         );
 
         let m2_a = Matrix::from([
-            [1, 2, 3],
-            [4, 5, 6]
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0]
         ]);
         let m2_b = Matrix::from([
-            [1, 2],
-            [3, 4],
-            [5, 6]
+            [1.0, 2.0],
+            [3.0, 4.0],
+            [5.0, 6.0]
         ]);
         assert_eq!(
             m2_a * m2_b,
             Matrix::from([
-                [22, 28],
-                [49, 64]
+                [22.0, 28.0],
+                [49.0, 64.0]
             ]),
             "(2x3) * (3x2) matrix multiplication failed."
         );
@@ -271,31 +277,37 @@ mod tests {
     #[test]
     fn test_matrix_determinant() {
         let m0 = SquareMatrix::from([]);
-        assert_eq!(m0.determinant(), 1, "(0x0) matrix determinant failed.");
+        assert_eq!(m0.determinant(), 1.0, "(0x0) matrix determinant failed.");
 
-        let m1 = SquareMatrix::from([[123]]);
-        assert_eq!(m1.determinant(), 123, "(1x1) matrix determinant failed.");
+        let m1 = SquareMatrix::from([[123.0]]);
+        assert_eq!(m1.determinant(), 123.0, "(1x1) matrix determinant failed.");
 
         let m2 = SquareMatrix::from([
-            [11, 7],
-            [2, 5]
+            [11.0, 7.0],
+            [2.0, 5.0]
         ]);
-        assert_eq!(m2.determinant(), 41, "(2x2) matrix determinant failed.");
+        assert_eq!(m2.determinant(), 41.0, "(2x2) matrix determinant failed.");
 
         let m3 = SquareMatrix::from([
-            [7, 4, 5],
-            [3, 10, 1],
-            [9, 0, 7]
+            [7.0, 4.0, 5.0],
+            [3.0, 10.0, 1.0],
+            [9.0, 0.0, 7.0]
         ]);
-        assert_eq!(m3.determinant(), -8, "(3x3) matrix determinant failed.");
+        assert_eq!(m3.determinant(), -8.0, "(3x3) matrix determinant failed.");
 
         let m4 = SquareMatrix::from([
-            [7, 8, 4, 5],
-            [6, 22, 1, 4],
-            [7, 12, 3, 2],
-            [0, 5, 14, 3]
+            [7.0, 8.0, 4.0, 5.0],
+            [6.0, 22.0, 1.0, 4.0],
+            [7.0, 12.0, 3.0, 2.0],
+            [0.0, 5.0, 14.0, 3.0]
         ]);
-        assert_eq!(m4.determinant(), 4471, "(4x4) matrix determinant failed.");
+        assert_eq!(m4.determinant(), 4471.0, "(4x4) matrix determinant failed.");
+    }
+
+    #[test]
+    fn test_matrix_inverse() {
+        let m = standard_matrix();
+        assert!(!m.has_inverse());
     }
 }
 
