@@ -24,7 +24,11 @@ impl<
         std::array::from_fn(|i| self.rows().map(|row| row[i]))
     }
 
-    pub fn transform<F>(&self, f: F) -> Self
+    pub fn transpose(&self) -> Matrix<C, R> {
+        Matrix::from(self.columns())
+    }
+
+    pub fn map<F>(&self, f: F) -> Self
         where F: Fn(f32) -> f32 {
         Self::new(|r, c| f(self[r][c]))
     }
@@ -124,18 +128,24 @@ impl<
 > std::ops::Mul<f32> for Matrix<R, C> {
     type Output = Self;
     fn mul(self, rhs: f32) -> Self::Output {
-        self.transform(|v| v * rhs)
+        self.map(|v| v * rhs)
     }
 }
 
-impl<
-    const R: usize,
-    const C: usize
-> From<[[f32; C]; R]> for Matrix<R, C> {
-    fn from(value: [[f32; C]; R]) -> Self {
-        Self(value)
-    }
+macro_rules! matrix_from_2d_num_array {
+    ($($num:ty)*) => ($(
+        impl<
+            const R: usize,
+            const C: usize
+        > From<[[$num; C]; R]> for Matrix<R, C> {
+            fn from(value: [[$num; C]; R]) -> Self {
+                Self(value.map(|a| a.map(|b| b as f32)))
+            }
+        }
+    )*)
 }
+
+matrix_from_2d_num_array!(f32 i32);
 
 impl<
     const R: usize,
@@ -172,24 +182,11 @@ mod tests {
     use super::*;
 
     fn standard_matrix() -> Matrix<3, 3> {
-        Matrix([
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0],
-            [7.0, 8.0, 9.0]
+        Matrix::from([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
         ])
-    }
-
-    #[test]
-    fn test_matrix_columns() {
-        let matrix = standard_matrix();
-        assert_eq!(
-            matrix.columns(),
-            [
-                [1.0, 4.0, 7.0],
-                [2.0, 5.0, 8.0],
-                [3.0, 6.0, 9.0]
-            ]
-        )
     }
 
     #[test]
@@ -197,10 +194,10 @@ mod tests {
         let matrix = SquareMatrix::<3>::zero();
         assert_eq!(
             matrix,
-            Matrix([
-                [0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0]
+            Matrix::from([
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0]
             ])
         );
     }
@@ -210,10 +207,10 @@ mod tests {
         let matrix = SquareMatrix::<3>::identity();
         assert_eq!(
             matrix,
-            Matrix([
-                [1.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0],
-                [0.0, 0.0, 1.0]
+            Matrix::from([
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1]
             ])
         );
     }
@@ -232,9 +229,9 @@ mod tests {
         assert_eq!(
             m3,
             Matrix::from([
-                [2.0, 4.0, 6.0],
-                [8.0, 10.0, 12.0],
-                [14.0, 16.0, 18.0]
+                [2, 4, 6],
+                [8, 10, 12],
+                [14, 16, 18]
             ])
         );
     }
@@ -249,28 +246,28 @@ mod tests {
 
     #[test]
     fn test_matrix_multiplication() {
-        let m1_a = Matrix::from([[5.0]]);
-        let m1_b = Matrix::from([[3.0]]);
+        let m1_a = Matrix::from([[5]]);
+        let m1_b = Matrix::from([[3]]);
         assert_eq!(
             m1_a * m1_b,
-            Matrix::from([[15.0]]),
+            Matrix::from([[15]]),
             "(1x1) * (1x1) matrix multiplication failed."
         );
 
         let m2_a = Matrix::from([
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0]
+            [1, 2, 3],
+            [4, 5, 6]
         ]);
         let m2_b = Matrix::from([
-            [1.0, 2.0],
-            [3.0, 4.0],
-            [5.0, 6.0]
+            [1, 2],
+            [3, 4],
+            [5, 6]
         ]);
         assert_eq!(
             m2_a * m2_b,
             Matrix::from([
-                [22.0, 28.0],
-                [49.0, 64.0]
+                [22, 28],
+                [49, 64]
             ]),
             "(2x3) * (3x2) matrix multiplication failed."
         );
@@ -278,10 +275,10 @@ mod tests {
 
     #[test]
     fn test_matrix_determinant() {
-        let m0 = SquareMatrix::from([]);
+        let m0 = Matrix([]);
         assert_eq!(m0.determinant(), 1.0, "(0x0) matrix determinant failed.");
 
-        let m1 = SquareMatrix::from([[123.0]]);
+        let m1 = SquareMatrix::from([[123]]);
         assert_eq!(
             m1.determinant(),
             123.0,
@@ -289,8 +286,8 @@ mod tests {
         );
 
         let m2 = SquareMatrix::from([
-            [11.0, 7.0],
-            [2.0, 5.0]
+            [11, 7],
+            [2, 5]
         ]);
         assert_eq!(
             m2.determinant(),
@@ -299,9 +296,9 @@ mod tests {
         );
 
         let m3 = SquareMatrix::from([
-            [7.0, 4.0, 5.0],
-            [3.0, 10.0, 1.0],
-            [9.0, 0.0, 7.0]
+            [7, 4, 5],
+            [3, 10, 1],
+            [9, 0, 7]
         ]);
         assert_eq!(
             m3.determinant(),
@@ -310,10 +307,10 @@ mod tests {
         );
 
         let m4 = SquareMatrix::from([
-            [7.0, 8.0, 4.0, 5.0],
-            [6.0, 22.0, 1.0, 4.0],
-            [7.0, 12.0, 3.0, 2.0],
-            [0.0, 5.0, 14.0, 3.0]
+            [7, 8, 4, 5],
+            [6, 22, 1, 4],
+            [7, 12, 3, 2],
+            [0, 5, 14, 3]
         ]);
         assert_eq!(
             m4.determinant(),
@@ -326,6 +323,22 @@ mod tests {
     fn test_matrix_inverse() {
         let m = SquareMatrix::<3>::zero();
         assert!(!m.has_inverse());
+    }
+
+    #[test]
+    fn test_matrix_transpose() {
+        let m = Matrix::from([
+            [1, 2, 3],
+            [4, 5, 6]
+        ]);
+        assert_eq!(
+            m.transpose(),
+            Matrix::from([
+                [1, 4],
+                [2, 5],
+                [3, 6]
+            ])
+        )
     }
 }
 
