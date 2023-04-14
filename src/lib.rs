@@ -85,7 +85,7 @@ fn determinant_vec_impl(vec: &VecMatrix) -> f32 {
 
 #[macro_export]
 macro_rules! matrix_merge_op {
-    ($type:path, $op:tt) => {
+    ($type:path => $op:tt) => {
         impl<
             const R: usize,
             const C: usize
@@ -99,8 +99,8 @@ macro_rules! matrix_merge_op {
     }
 }
 
-matrix_merge_op!(std::ops::Add, add);
-matrix_merge_op!(std::ops::Sub, sub);
+matrix_merge_op!(std::ops::Add => add);
+matrix_merge_op!(std::ops::Sub => sub);
 
 impl<
     const R: usize,
