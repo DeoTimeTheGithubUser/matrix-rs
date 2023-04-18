@@ -161,9 +161,9 @@ macro_rules! matrix_from_2d_num_array {
 
 matrix_from_2d_num_array!(f32 i32 usize);
 
-impl<const R: usize, const C: usize> Into<VecMatrix> for &Matrix<R, C> {
-    fn into(self) -> VecMatrix {
-        self.rows().map(|r| r.to_vec()).to_vec()
+impl<const R: usize, const C: usize> From<&Matrix<R, C>> for VecMatrix {
+    fn from(val: &Matrix<R, C>) -> Self {
+        val.rows().map(|r| r.to_vec()).to_vec()
     }
 }
 
@@ -318,13 +318,11 @@ mod tests {
         let m1 = matrix! { 123 };
         assert_eq!(m1.determinant(), 123.0, "(1x1) matrix determinant failed.");
 
-
         let m2 = matrix! {
             11 7,
             2  5
         };
         assert_eq!(m2.determinant(), 41.0, "(2x2) matrix determinant failed.");
-
 
         let m3 = matrix! {
             7 4  5,
@@ -332,7 +330,6 @@ mod tests {
             9 0  7
         };
         assert_eq!(m3.determinant(), -8.0, "(3x3) matrix determinant failed.");
-
 
         let m4 = matrix! {
             7 8  4 5,
@@ -354,7 +351,8 @@ mod tests {
         let transposed_matrix = matrix! {
             1 2 3,
             4 5 6
-        }.transpose();
+        }
+        .transpose();
         assert_eq!(
             transposed_matrix,
             matrix! {
