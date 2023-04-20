@@ -5,4 +5,5 @@ authors = ["deotime"]
 description = "Library for using matrices in rust."
 keywords = ["matrix", "matrices"]
 repository = "https://github.com/DeoTimeTheGithubUser/matrix-rs"
+license = "MIT"
 edition = "2021"
