@@ -2,7 +2,7 @@
 name = "matrix-rs"
 version = "1.0.0"
 authors = ["deotime"]
-description = "Library for using matrices in rust."
+description = "Library for using matrices in rust. Uses const generics to ensure compile-time matrix safety."
 keywords = ["matrix", "matrices"]
 repository = "https://github.com/DeoTimeTheGithubUser/matrix-rs"
 license = "MIT"
