@@ -1,5 +1,12 @@
+#![feature(generic_const_exprs)]
+
+use checks::{usize::Zero, Failed};
+
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub struct Matrix<const R: usize, const C: usize>([[f32; C]; R]);
+pub struct Matrix<const R: usize, const C: usize>([[f32; C]; R])
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed;
 
 pub type SquareMatrix<const D: usize> = Matrix<D, D>;
 pub type VecMatrix = Vec<Vec<f32>>;
@@ -14,7 +21,11 @@ macro_rules! matrix {
     };
 }
 
-impl<const R: usize, const C: usize> Matrix<R, C> {
+impl<const R: usize, const C: usize> Matrix<R, C>
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+{
     pub fn new(closure: impl Fn(usize, usize) -> f32) -> Self {
         Self(std::array::from_fn(|row| {
             std::array::from_fn(|column| closure(row, column))
@@ -54,7 +65,10 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
     }
 }
 
-impl<const D: usize> SquareMatrix<D> {
+impl<const D: usize> SquareMatrix<D>
+where
+    Zero<D>: Failed,
+{
     pub fn identity() -> Self {
         Self::new(|row, column| if row == column { 1.0 } else { 0.0 })
     }
@@ -108,7 +122,11 @@ impl<const D: usize> SquareMatrix<D> {
 
 macro_rules! matrix_merge_op {
     ($type:path => $op:tt) => {
-        impl<const R: usize, const C: usize> $type for Matrix<R, C> {
+        impl<const R: usize, const C: usize> $type for Matrix<R, C>
+        where
+            Zero<R>: Failed,
+            Zero<C>: Failed,
+        {
             type Output = Self;
 
             fn $op(self, rhs: Self) -> Self::Output {
@@ -121,8 +139,11 @@ macro_rules! matrix_merge_op {
 matrix_merge_op!(std::ops::Add => add);
 matrix_merge_op!(std::ops::Sub => sub);
 
-impl<const R: usize, const C: usize, const C2: usize> std::ops::Mul<Matrix<C, C2>>
-    for Matrix<R, C>
+impl<const R: usize, const C: usize, const C2: usize> std::ops::Mul<Matrix<C, C2>> for Matrix<R, C>
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+    Zero<C2>: Failed,
 {
     type Output = Matrix<R, C2>;
 
@@ -139,7 +160,11 @@ impl<const R: usize, const C: usize, const C2: usize> std::ops::Mul<Matrix<C, C2
     }
 }
 
-impl<const R: usize, const C: usize> std::ops::Mul<f32> for Matrix<R, C> {
+impl<const R: usize, const C: usize> std::ops::Mul<f32> for Matrix<R, C>
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+{
     type Output = Self;
     fn mul(self, rhs: f32) -> Self::Output {
         self.map(|v| v * rhs)
@@ -148,10 +173,11 @@ impl<const R: usize, const C: usize> std::ops::Mul<f32> for Matrix<R, C> {
 
 macro_rules! matrix_from_2d_num_array {
     ($($num:ty)*) => ($(
-        impl<
-            const R: usize,
-            const C: usize
-        > From<[[$num; C]; R]> for Matrix<R, C> {
+        impl<const R: usize, const C: usize> From<[[$num; C]; R]> for Matrix<R, C>
+        where
+            Zero<R>: Failed,
+            Zero<C>: Failed
+        {
             fn from(value: [[$num; C]; R]) -> Self {
                 Self(value.map(|a| a.map(|b| b as f32)))
             }
@@ -161,19 +187,31 @@ macro_rules! matrix_from_2d_num_array {
 
 matrix_from_2d_num_array!(f32 i32 usize);
 
-impl<const R: usize, const C: usize> From<&Matrix<R, C>> for VecMatrix {
+impl<const R: usize, const C: usize> From<&Matrix<R, C>> for VecMatrix
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+{
     fn from(val: &Matrix<R, C>) -> Self {
         val.rows().map(|r| r.to_vec()).to_vec()
     }
 }
 
-impl<const R: usize, const C: usize> Default for Matrix<R, C> {
+impl<const R: usize, const C: usize> Default for Matrix<R, C>
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+{
     fn default() -> Self {
         Self::zero()
     }
 }
 
-impl<const R: usize, const C: usize> std::ops::Index<usize> for Matrix<R, C> {
+impl<const R: usize, const C: usize> std::ops::Index<usize> for Matrix<R, C>
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+{
     type Output = [f32; C];
 
     fn index(&self, row: usize) -> &Self::Output {
@@ -181,7 +219,11 @@ impl<const R: usize, const C: usize> std::ops::Index<usize> for Matrix<R, C> {
     }
 }
 
-impl<const R: usize, const C: usize> std::fmt::Display for Matrix<R, C> {
+impl<const R: usize, const C: usize> std::fmt::Display for Matrix<R, C>
+where
+    Zero<R>: Failed,
+    Zero<C>: Failed,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let lines = self.rows().map(|row| format!("{:?}", row));
         let longest = lines.iter().map(|s| s.len()).max().unwrap_or(0);

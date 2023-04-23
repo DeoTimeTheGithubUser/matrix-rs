@@ -1,3 +1,5 @@
+#![feature(generic_const_exprs)]
+
 use matrix_rs::*;
 
 fn matrix_3x3_1to9() -> Matrix<3, 3> {
@@ -110,9 +112,6 @@ fn test_matrix_multiplication() {
 
 #[test]
 fn test_matrix_determinant() {
-    let m0 = Matrix::<0, 0>::zero();
-    assert_eq!(m0.determinant(), 1.0, "(0x0) matrix determinant failed.");
-
     let m1 = matrix! { 123 };
     assert_eq!(m1.determinant(), 123.0, "(1x1) matrix determinant failed.");
 
